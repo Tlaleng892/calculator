@@ -3,12 +3,29 @@ let historyDiv = document.getElementById('history');
 let currentInput = '0';
 let operator = null;
 let previousInput = null;
+let audioCtx = null;
+
+function playClick() {
+  try {
+    if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+    let osc = audioCtx.createOscillator();
+    let gain = audioCtx.createGain();
+    osc.connect(gain);
+    gain.connect(audioCtx.destination);
+    osc.frequency.value = 800;
+    osc.type = 'sine';
+    gain.gain.value = 0.1;
+    osc.start();
+    osc.stop(audioCtx.currentTime + 0.05);
+  } catch (e) {}
+}
 
 function updateDisplay() {
   display.textContent = currentInput;
 }
 
 function appendToDisplay(value) {
+  playClick();
   if (currentInput === '0' && value !== '.') {
     currentInput = value;
   } else {
@@ -18,6 +35,7 @@ function appendToDisplay(value) {
 }
 
 function scientific(func) {
+  playClick();
   let num = parseFloat(currentInput);
   let result;
   let label = '';
@@ -54,6 +72,42 @@ function scientific(func) {
   updateDisplay();
 }
 
+function pressNumber(value) {
+  playClick();
+  if (currentInput === '0' && value !== '.') {
+    currentInput = value;
+  } else {
+    currentInput += value;
+  }
+  updateDisplay();
+}
+
+function pressClear() {
+  playClick();
+  currentInput = '0';
+  operator = null;
+  previousInput = null;
+  if (historyDiv) historyDiv.textContent = 'History will show here...';
+  updateDisplay();
+}
+
+function pressDelete() {
+  playClick();
+  currentInput = currentInput.slice(0, -1);
+  if (currentInput === '') currentInput = '0';
+  updateDisplay();
+}
+
+function pressOperator(op) {
+  playClick();
+  if (previousInput !== null && operator !== null) {
+    calculate();
+  }
+  previousInput = currentInput;
+  operator = op;
+  currentInput = '0';
+}
+
 function calculate() {
   let result;
   let prev = parseFloat(previousInput);
@@ -78,50 +132,40 @@ document.querySelectorAll('button').forEach(button => {
     let action = button.getAttribute('data-action');
     if (!action) return;
 
-    if (action === 'number') {
-      let value = button.getAttribute('data-value');
-      if (currentInput === '0' && value !== '.') {
-        currentInput = value;
-      } else {
-        currentInput += value;
-      }
-      updateDisplay();
-    }
-
-    if (action === 'clear') {
-      currentInput = '0';
-      operator = null;
-      previousInput = null;
-      if (historyDiv) historyDiv.textContent = 'History will show here...';
-      updateDisplay();
-    }
-
-    if (action === 'delete') {
-      currentInput = currentInput.slice(0, -1);
-      if (currentInput === '') currentInput = '0';
-      updateDisplay();
-    }
-
+    if (action === 'number') pressNumber(button.getAttribute('data-value'));
+    if (action === 'clear') pressClear();
+    if (action === 'delete') pressDelete();
     if (action === 'percent') {
+      playClick();
       currentInput = (parseFloat(currentInput) / 100).toString();
       updateDisplay();
     }
-
-    if (action === 'operator') {
-      if (previousInput !== null && operator !== null) {
-        calculate();
-      }
-      previousInput = currentInput;
-      operator = button.getAttribute('data-value');
-      currentInput = '0';
-    }
-
+    if (action === 'operator') pressOperator(button.getAttribute('data-value'));
     if (action === 'equals') {
-      if (previousInput !== null && operator !== null) {
-        calculate();
-      }
+      playClick();
+      if (previousInput !== null && operator !== null) calculate();
     }
   });
+});
+
+// KEYBOARD SUPPORT - THIS IS THE NEW PART!
+document.addEventListener('keydown', (event) => {
+  let key = event.key;
+  if (key >= '0' && key <= '9' || key === '.') pressNumber(key);
+  else if (key === '+' || key === '-' || key === '*' || key === '/') pressOperator(key);
+  else if (key === 'Enter' || key === '=') {
+    event.preventDefault();
+    playClick();
+    if (previousInput !== null && operator !== null) calculate();
+  }
+  else if (key === 'Backspace') pressDelete();
+  else if (key === 'Escape' || key.toLowerCase() === 'c') pressClear();
+  else if (key === '%') {
+    playClick();
+    currentInput = (parseFloat(currentInput) / 100).toString();
+    updateDisplay();
+  }
+  else if (key === '(' || key === ')') appendToDisplay(key);
 });
 
 updateDisplay();
