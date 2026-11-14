@@ -1,7 +1,7 @@
 body {
+  font-family: Arial, sans-serif;
   text-align: center;
   background-color: #f0f0f0;
-  font-family: Arial, sans-serif;
   margin: 0;
   padding: 20px;
 }
@@ -11,25 +11,34 @@ h1 {
 }
 
 .calculator {
-  width: 320px;
-  margin: 20px auto;
   background-color: #222;
+  width: 300px;
+  margin: 20px auto;
   padding: 20px;
   border-radius: 20px;
-  box-shadow: 0 10px 20px rgba(0,0,0,0.3);
+  box-shadow: 0 5px 15px rgba(0,0,0,0.3);
 }
 
 #display {
   background-color: white;
-  color: black;
   font-size: 36px;
   text-align: right;
-  padding: 20px 15px;
+  padding: 15px;
   border-radius: 10px;
   margin-bottom: 15px;
-  min-height: 50px;
+  min-height: 40px;
   overflow: hidden;
-  word-break: break-all;
+}
+
+#history {
+  background-color: #333;
+  color: #aaa;
+  font-size: 14px;
+  text-align: right;
+  padding: 10px 15px;
+  border-radius: 10px;
+  margin-bottom: 15px;
+  min-height: 20px;
 }
 
 .buttons {
@@ -39,21 +48,17 @@ h1 {
 }
 
 .buttons button {
+  background-color: #555;
+  color: white;
+  font-size: 22px;
   padding: 20px 0;
-  font-size: 20px;
   border: none;
   border-radius: 10px;
-  background-color: #444;
-  color: white;
   cursor: pointer;
 }
 
 .buttons button:hover {
-  background-color: #666;
-}
-
-.buttons button:active {
-  transform: scale(0.95);
+  background-color: #777;
 }
 
 .buttons .operator {
@@ -72,15 +77,6 @@ h1 {
   background-color: #34c759;
 }
 
-.buttons .zero {#history {
-  background-color: #333;
-  color: #aaa;
-  font-size: 14px;
-  text-align: right;
-  padding: 10px 15px;
-  border-radius: 10px;
-  margin-bottom: 15px;
-  min-height: 20px;
-}
+.buttons .zero {
   grid-column: span 2;
 }
