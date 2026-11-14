@@ -14,9 +14,9 @@ function playClick() {
     gain.connect(audioCtx.destination);
     osc.frequency.value = 800;
     osc.type = 'sine';
-    gain.gain.value = 0.1;
+    gain.gain.value = 0.5;
     osc.start();
-    osc.stop(audioCtx.currentTime + 0.05);
+    osc.stop(audioCtx.currentTime + 0.15);
   } catch (e) {}
 }
 
