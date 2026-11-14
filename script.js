@@ -1,145 +1,127 @@
-const display = document.getElementById('display');
-const historyBox = document.getElementById('history');
-let firstNumber = '';
-let operator = '';
-let secondNumber = '';
-let justCalculated = false;
-let history = [];
-
-function playClick() {
-  try {
-    const ctx = new (window.AudioContext || window.webkitAudioContext)();
-    const beep = ctx.createOscillator();
-    beep.frequency.value = 600;
-    beep.connect(ctx.destination);
-    beep.start();
-    beep.stop(ctx.currentTime + 0.05);
-  } catch(e) {}
-}
+let display = document.getElementById('display');
+let historyDiv = document.getElementById('history');
+let currentInput = '0';
+let operator = null;
+let previousInput = null;
 
 function updateDisplay() {
-  if (operator === '') {
-    display.textContent = firstNumber || '0';
-  } else {
-    let pretty = operator === '*' ? '×' : operator === '/' ? '÷' : operator;
-    display.textContent = firstNumber + ' ' + pretty + ' ' + secondNumber;
-  }
+  display.textContent = currentInput;
 }
 
-function updateHistory() {
-  if (history.length === 0) {
-    historyBox.textContent = 'History will show here...';
+function appendToDisplay(value) {
+  if (currentInput === '0' && value !== '.') {
+    currentInput = value;
   } else {
-    historyBox.innerHTML = history.slice(-3).reverse().join('<br>');
+    currentInput += value;
   }
+  updateDisplay();
+}
+
+function scientific(func) {
+  let num = parseFloat(currentInput);
+  let result;
+  let label = '';
+
+  if (func === 'sin') {
+    result = Math.sin(num * Math.PI / 180);
+    label = 'sin(' + num + ')';
+  } else if (func === 'cos') {
+    result = Math.cos(num * Math.PI / 180);
+    label = 'cos(' + num + ')';
+  } else if (func === 'tan') {
+    result = Math.tan(num * Math.PI / 180);
+    label = 'tan(' + num + ')';
+  } else if (func === 'sqrt') {
+    result = Math.sqrt(num);
+    label = '√(' + num + ')';
+  } else if (func === 'square') {
+    result = num * num;
+    label = '(' + num + ')²';
+  } else if (func === 'pi') {
+    if (currentInput === '0') {
+      currentInput = Math.PI.toString();
+    } else {
+      currentInput += Math.PI.toString();
+    }
+    updateDisplay();
+    return;
+  }
+
+  if (historyDiv) {
+    historyDiv.textContent = label + ' = ' + result;
+  }
+  currentInput = result.toString();
+  updateDisplay();
 }
 
 function calculate() {
-  const a = parseFloat(firstNumber);
-  const b = parseFloat(secondNumber);
-  if (isNaN(a) || isNaN(b)) return;
-  let result = 0;
-  if (operator === '+') result = a + b;
-  if (operator === '-') result = a - b;
-  if (operator === '*') result = a * b;
-  if (operator === '/') {
-    if (b === 0) {
-      display.textContent = 'Nope! Cant divide by 0 😅';
-      firstNumber = '';
-      secondNumber = '';
-      operator = '';
-      return;
-    }
-    result = a / b;
-  }
-  result = Math.round(result * 100000) / 100000;
-  let pretty = operator === '*' ? '×' : operator === '/' ? '÷' : operator;
-  history.push(firstNumber + ' ' + pretty + ' ' + secondNumber + ' = ' + result);
-  updateHistory();
-  display.textContent = result;
-  firstNumber = String(result);
-  secondNumber = '';
-  operator = '';
-  justCalculated = true;
-}
+  let result;
+  let prev = parseFloat(previousInput);
+  let curr = parseFloat(currentInput);
 
-function pressNumber(value) {
-  if (justCalculated && operator === '') {
-    firstNumber = '';
-    justCalculated = false;
-  }
-  if (value === '.' && (operator === '' ? firstNumber : secondNumber).includes('.')) return;
-  if (operator === '') {
-    if (firstNumber.length < 12) firstNumber += value;
-  } else {
-    if (secondNumber.length < 12) secondNumber += value;
-  }
-  updateDisplay();
-}
+  if (operator === '+') result = prev + curr;
+  if (operator === '-') result = prev - curr;
+  if (operator === '*') result = prev * curr;
+  if (operator === '/') result = prev / curr;
 
-function pressOperator(value) {
-  if (firstNumber === '') return;
-  if (secondNumber !== '') calculate();
-  operator = value;
-  justCalculated = false;
-  updateDisplay();
-}
-
-function pressClear() {
-  firstNumber = '';
-  secondNumber = '';
-  operator = '';
-  justCalculated = false;
-  updateDisplay();
-}
-
-function pressDelete() {
-  if (operator === '') {
-    firstNumber = firstNumber.slice(0, -1);
-  } else if (secondNumber === '') {
-    operator = '';
-  } else {
-    secondNumber = secondNumber.slice(0, -1);
+  if (historyDiv) {
+    historyDiv.textContent = previousInput + ' ' + operator + ' ' + currentInput + ' = ' + result;
   }
-  updateDisplay();
-}
-
-function pressPercent() {
-  if (operator === '' && firstNumber !== '') {
-    firstNumber = String(parseFloat(firstNumber) / 100);
-  } else if (secondNumber !== '') {
-    secondNumber = String(parseFloat(secondNumber) / 100);
-  }
+  currentInput = result.toString();
+  operator = null;
+  previousInput = null;
   updateDisplay();
 }
 
 document.querySelectorAll('button').forEach(button => {
   button.addEventListener('click', () => {
-    playClick();
-    const action = button.dataset.action;
-    const value = button.dataset.value;
-    if (action === 'number') pressNumber(value);
-    if (action === 'operator') pressOperator(value);
-    if (action === 'equals') calculate();
-    if (action === 'clear') pressClear();
-    if (action === 'delete') pressDelete();
-    if (action === 'percent') pressPercent();
+    let action = button.getAttribute('data-action');
+    if (!action) return;
+
+    if (action === 'number') {
+      let value = button.getAttribute('data-value');
+      if (currentInput === '0' && value !== '.') {
+        currentInput = value;
+      } else {
+        currentInput += value;
+      }
+      updateDisplay();
+    }
+
+    if (action === 'clear') {
+      currentInput = '0';
+      operator = null;
+      previousInput = null;
+      if (historyDiv) historyDiv.textContent = 'History will show here...';
+      updateDisplay();
+    }
+
+    if (action === 'delete') {
+      currentInput = currentInput.slice(0, -1);
+      if (currentInput === '') currentInput = '0';
+      updateDisplay();
+    }
+
+    if (action === 'percent') {
+      currentInput = (parseFloat(currentInput) / 100).toString();
+      updateDisplay();
+    }
+
+    if (action === 'operator') {
+      if (previousInput !== null && operator !== null) {
+        calculate();
+      }
+      previousInput = currentInput;
+      operator = button.getAttribute('data-value');
+      currentInput = '0';
+    }
+
+    if (action === 'equals') {
+      if (previousInput !== null && operator !== null) {
+        calculate();
+      }
+    }
   });
 });
 
-// KEYBOARD POWER! ⌨️
-document.addEventListener('keydown', (e) => {
-  if (e.key >= '0' && e.key <= '9') { playClick(); pressNumber(e.key); }
-  if (e.key === '.') { playClick(); pressNumber('.'); }
-  if (e.key === '+') { playClick(); pressOperator('+'); }
-  if (e.key === '-') { playClick(); pressOperator('-'); }
-  if (e.key === '*') { playClick(); pressOperator('*'); }
-  if (e.key === '/') { e.preventDefault(); playClick(); pressOperator('/'); }
-  if (e.key === 'Enter' || e.key === '=') { playClick(); calculate(); }
-  if (e.key === 'Backspace') { playClick(); pressDelete(); }
-  if (e.key === 'Escape') { playClick(); pressClear(); }
-  if (e.key === '%') { playClick(); pressPercent(); }
-});
-
 updateDisplay();
-updateHistory();
